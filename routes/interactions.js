@@ -5,9 +5,14 @@ const pool = require('../db');
 // Store interaction
 router.post('/', async (req, res) => {
   try {
+    // 🔍 DEBUG: show exactly which DB + schema Render is using
+    const debug = await pool.query(
+      'SELECT current_database(), current_schema()'
+    );
+    console.log('DB DEBUG:', debug.rows);
+
     const { interaction_type, page_source } = req.body;
 
-    // Insert into public.interactions
     await pool.query(
       `
       INSERT INTO public.interactions (interaction_type, page_source)
@@ -24,4 +29,5 @@ router.post('/', async (req, res) => {
 });
 
 module.exports = router;
+
 
