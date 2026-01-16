@@ -10,11 +10,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Health check route (ADD THIS)
+app.get('/', (req, res) => {
+  res.json({
+    status: 'OK',
+    message: 'M33 Support Backend is running 🚀'
+  });
+});
+
 // Routes
 app.use('/api/interactions', interactionRoutes);
 
 // Server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
