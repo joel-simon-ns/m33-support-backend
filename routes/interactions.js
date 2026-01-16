@@ -8,7 +8,7 @@ router.post('/', async (req, res) => {
     const { interaction_type, page_source, timestamp } = req.body;
 
     await pool.query(
-      `INSERT INTO product_support.interactions (interaction_type, page_source)
+      `INSERT INTO  public.interactions (interaction_type, page_source)
        VALUES ($1, $2)`,
       [interaction_type, page_source]
     );
