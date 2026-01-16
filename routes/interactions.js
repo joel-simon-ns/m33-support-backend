@@ -5,10 +5,10 @@ const pool = require('../db');
 // Store interaction
 router.post('/', async (req, res) => {
   try {
-    const { interaction_type, page_source } = req.body;
+    const { interaction_type, page_source, timestamp } = req.body;
 
     await pool.query(
-      `INSERT INTO interactions (interaction_type, page_source)
+      `INSERT INTO product_support.interactions (interaction_type, page_source)
        VALUES ($1, $2)`,
       [interaction_type, page_source]
     );
