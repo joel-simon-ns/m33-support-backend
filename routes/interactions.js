@@ -2,27 +2,52 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 
-// Store interaction
+// ---- Simple in-memory rate limiter ----
+const rateLimitMap = new Map();
+const RATE_LIMIT = 10; // requests
+const WINDOW_MS = 60 * 1000; // 1 minute
+
+const ALLOWED_INTERACTIONS = [
+  "whatsapp_click",
+  "button_click",
+  "page_view"
+];
+
 router.post('/', async (req, res) => {
   try {
-    // 🔍 DEBUG: confirm DB + schema
-    const debug = await pool.query(
-      'SELECT current_database(), current_schema()'
+    const ip = req.ip || req.connection.remoteAddress;
+    const now = Date.now();
+
+    // ---- Rate limiting logic ----
+    const userRequests = rateLimitMap.get(ip) || [];
+    const recentRequests = userRequests.filter(
+      timestamp => now - timestamp < WINDOW_MS
     );
-    console.log('DB DEBUG:', debug.rows);
 
-    const { interaction_type, page_source } = req.body;
-
-    // ✅ Basic validation
-    if (!interaction_type || !page_source) {
-      return res.status(400).json({ error: 'Invalid interaction data' });
+    if (recentRequests.length >= RATE_LIMIT) {
+      return res.status(429).json({
+        error: "Too many requests. Please try again later."
+      });
     }
 
-    // ✅ Metadata from request
+    recentRequests.push(now);
+    rateLimitMap.set(ip, recentRequests);
+
+    // ---- Input validation ----
+    const { interaction_type, page_source } = req.body;
+
+    if (!interaction_type || !page_source) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    if (!ALLOWED_INTERACTIONS.includes(interaction_type)) {
+      return res.status(400).json({ error: "Invalid interaction type" });
+    }
+
+    // ---- Metadata extraction ----
     const userAgent = req.headers['user-agent'] || null;
     const referrer = req.headers['referer'] || null;
 
-    // ✅ Simple & explainable device detection
     const deviceType =
       userAgent && userAgent.toLowerCase().includes('mobile')
         ? 'mobile'
@@ -37,14 +62,12 @@ router.post('/', async (req, res) => {
       [interaction_type, page_source, userAgent, deviceType, referrer]
     );
 
-    res.status(201).json({ message: 'Interaction stored successfully' });
+    res.status(201).json({ message: "Interaction stored successfully" });
+
   } catch (error) {
-    console.error('DB INSERT ERROR:', error);
-    res.status(500).json({ error: 'Database insert failed' });
+    console.error("RATE / INSERT ERROR:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
 module.exports = router;
-
-
-
