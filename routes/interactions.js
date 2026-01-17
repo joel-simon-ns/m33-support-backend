@@ -70,9 +70,4 @@ router.post('/', async (req, res) => {
   }
 });
 
-// ---------------- TEMP TEST ROUTE ----------------
-router.post('/test', (req, res) => {
-  res.status(200).json({ message: "Request accepted" });
-});
-
 module.exports = router;
